@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>加密貨幣機器人儀表板</title>
+<meta name="description" content="BTC/ETH 模擬盤與高頻掃描器即時數據儀表板" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container header-inner">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">📊</span>
+      <span class="brand-text">加密貨幣機器人<span class="brand-accent">儀表板</span></span>
+    </div>
+    <div class="header-actions">
+      <span class="updated-at" id="updatedAt">載入中…</span>
+      <button class="btn-icon" id="themeToggle" type="button" aria-label="切換深淺色">🌓</button>
+      <button class="btn-refresh" id="refreshBtn" type="button">重新整理</button>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+  <section class="ticker-row" id="tickerRow" aria-label="即時行情與總覽">
+    <div class="tile skeleton" id="tileBtc"></div>
+    <div class="tile skeleton" id="tileEth"></div>
+    <div class="tile skeleton" id="tileDays"></div>
+    <div class="tile skeleton" id="tileOpen"></div>
+  </section>
+
+  <section class="panel" id="paperSection">
+    <div class="panel-head">
+      <h2>模擬盤 <span class="tag tag-stable">長期趨勢軌道</span></h2>
+      <p class="panel-desc">六個策略在 BTC / ETH 上的虛擬權益曲線;另外 8 個幣種只跑「買入持有」與目前最佳候選「趨勢+波動率目標」,驗證該策略是否只在 BTC/ETH 上碰巧成立(見下方績效總表)。每日結算,含手續費。</p>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>BTC 權益曲線</h3>
+          <div class="legend" id="legendBtc"></div>
+        </div>
+        <div class="chart-wrap" id="chartBtc"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>ETH 權益曲線</h3>
+          <div class="legend" id="legendEth"></div>
+        </div>
+        <div class="chart-wrap" id="chartEth"></div>
+      </div>
+    </div>
+    <div class="table-card">
+      <h3>目前績效(相對 $10,000 起始本金)</h3>
+      <div class="table-scroll">
+        <table id="paperTable">
+          <thead><tr><th>幣種</th><th>策略</th><th>目前價值</th><th>報酬率</th><th>持倉</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="scanSection">
+    <div class="panel-head">
+      <h2>高頻掃描器 <span class="tag tag-experimental">實驗性軌道</span></h2>
+      <p class="panel-desc">10 幣種 × 6 訊號,小時線,固定 1:1R。與上方模擬盤是分開的獨立系統,樣本量還小,以下勝率僅供觀察。</p>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>各訊號累積勝率</h3>
+        </div>
+        <div class="chart-wrap" id="chartWinRate"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>累積淨 R(所有已結束交易)</h3>
+        </div>
+        <div class="chart-wrap" id="chartCumR"></div>
+      </div>
+    </div>
+    <div class="table-card">
+      <h3>目前未平倉部位</h3>
+      <div class="table-scroll">
+        <table id="openTable">
+          <thead><tr><th>幣種</th><th>訊號</th><th>方向</th><th>進場</th><th>止損</th><th>止盈</th><th>已持有</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="table-card">
+      <h3>最近平倉紀錄</h3>
+      <div class="table-scroll">
+        <table id="closedTable">
+          <thead><tr><th>幣種</th><th>訊號</th><th>結果</th><th>進場→出場</th><th>淨結果</th><th>時間</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <p>資料來源:Cloudflare Worker(crypto-price-bot),每日 09:00 台灣時間更新。模擬盤與掃描器皆為虛擬資金,不構成投資建議。</p>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
