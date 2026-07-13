@@ -15,6 +15,14 @@ const fmtDate = (ms) => {
 const SERIES_COLORS = ["--series-1", "--series-2", "--series-3", "--series-4", "--series-5", "--series-6"];
 const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
+// 「近30天」圖表用:只保留最近 30 天內的資料點,累積數值(如累積淨R)不重新歸零,
+// 只是把 X 軸縮小到近期範圍,方便看細節。
+const RECENT_WINDOW_MS = 30 * 24 * 3600 * 1000;
+const filterRecent = (points) => {
+  const cutoff = Date.now() - RECENT_WINDOW_MS;
+  return points.filter((p) => p.x >= cutoff);
+};
+
 const STRATEGY_ORDER = ["buyhold", "ma200", "cross", "ensemble", "voltarget", "dca"];
 const STRATEGY_LABELS = {
   buyhold: "買入持有", ma200: "MA200濾網", cross: "MA50/200", ensemble: "趨勢綜合", voltarget: "趨勢+波動目標", dca: "DCA",
@@ -281,24 +289,27 @@ function renderTickers(prices, paper, scan) {
 function renderPaperCharts(paper) {
   const history = paper?.history || [];
   ["BTC", "ETH"].forEach((coin) => {
-    const series = STRATEGY_ORDER.map((key, i) => ({
+    const label = coin === "BTC" ? "Btc" : "Eth";
+    const allSeries = STRATEGY_ORDER.map((key, i) => ({
       name: STRATEGY_LABELS[key],
       color: cssVar(SERIES_COLORS[i]),
       points: history
         .filter((h) => h.coins?.[coin]?.[key] !== undefined)
         .map((h) => ({ x: new Date(h.date).getTime(), y: h.coins[coin][key] })),
     })).filter((s) => s.points.length > 0);
+    const recentSeries = allSeries
+      .map((s) => ({ ...s, points: filterRecent(s.points) }))
+      .filter((s) => s.points.length > 0);
 
-    drawLineChart(document.getElementById(`chart${coin === "BTC" ? "Btc" : "Eth"}`), series, {
-      height: 220,
-      yFmt: (v) => fmtUsd(v),
-      xFmt: (v) => fmtDate(v),
-    });
+    const chartOpts = { height: 220, yFmt: (v) => fmtUsd(v), xFmt: (v) => fmtDate(v) };
+    drawLineChart(document.getElementById(`chart${label}Recent`), recentSeries, chartOpts);
+    drawLineChart(document.getElementById(`chart${label}All`), allSeries, chartOpts);
 
-    const legendEl = document.getElementById(`legend${coin === "BTC" ? "Btc" : "Eth"}`);
-    legendEl.innerHTML = series.map((s) =>
+    const legendHtml = allSeries.map((s) =>
       `<span class="legend-item"><span class="legend-swatch" style="background:${s.color}"></span>${s.name}</span>`
     ).join("");
+    document.getElementById(`legend${label}Recent`).innerHTML = legendHtml;
+    document.getElementById(`legend${label}All`).innerHTML = legendHtml;
   });
 }
 
@@ -356,12 +367,19 @@ function renderScanCharts(scan) {
   const closed = [...(scan?.closedRecent || [])].sort((a, b) => a.closedAtMs - b.closedAtMs);
   let cum = 0;
   const points = closed.map((c) => { cum += c.netR; return { x: c.closedAtMs, y: cum }; });
+  const recentPoints = filterRecent(points);
   const color = cssVar("--series-1");
-  drawLineChart(document.getElementById("chartCumR"), points.length ? [{ name: "累積淨R", color, points }] : [], {
-    height: 220,
-    yFmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}R`,
-    xFmt: (v) => fmtDate(v),
-  });
+  const cumROpts = { height: 220, yFmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}R`, xFmt: (v) => fmtDate(v) };
+  drawLineChart(
+    document.getElementById("chartCumRRecent"),
+    recentPoints.length ? [{ name: "累積淨R", color, points: recentPoints }] : [],
+    cumROpts
+  );
+  drawLineChart(
+    document.getElementById("chartCumRAll"),
+    points.length ? [{ name: "累積淨R", color, points }] : [],
+    cumROpts
+  );
 }
 
 function renderScanTables(scan) {

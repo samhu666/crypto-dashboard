@@ -44,17 +44,31 @@
     <div class="chart-grid">
       <div class="chart-card">
         <div class="chart-card-head">
-          <h3>BTC 權益曲線</h3>
-          <div class="legend" id="legendBtc"></div>
+          <h3>BTC 權益曲線(近 30 天)</h3>
+          <div class="legend" id="legendBtcRecent"></div>
         </div>
-        <div class="chart-wrap" id="chartBtc"></div>
+        <div class="chart-wrap" id="chartBtcRecent"></div>
       </div>
       <div class="chart-card">
         <div class="chart-card-head">
-          <h3>ETH 權益曲線</h3>
-          <div class="legend" id="legendEth"></div>
+          <h3>BTC 權益曲線(全部歷史)</h3>
+          <div class="legend" id="legendBtcAll"></div>
         </div>
-        <div class="chart-wrap" id="chartEth"></div>
+        <div class="chart-wrap" id="chartBtcAll"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>ETH 權益曲線(近 30 天)</h3>
+          <div class="legend" id="legendEthRecent"></div>
+        </div>
+        <div class="chart-wrap" id="chartEthRecent"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>ETH 權益曲線(全部歷史)</h3>
+          <div class="legend" id="legendEthAll"></div>
+        </div>
+        <div class="chart-wrap" id="chartEthAll"></div>
       </div>
     </div>
     <div class="table-card">
@@ -74,7 +88,7 @@
       <p class="panel-desc">10 幣種 × 6 訊號,小時線,固定 1:1R。與上方模擬盤是分開的獨立系統,樣本量還小,以下勝率僅供觀察。</p>
     </div>
     <div class="chart-grid">
-      <div class="chart-card">
+      <div class="chart-card chart-card-full">
         <div class="chart-card-head">
           <h3>各訊號累積勝率</h3>
         </div>
@@ -82,9 +96,15 @@
       </div>
       <div class="chart-card">
         <div class="chart-card-head">
-          <h3>累積淨 R(所有已結束交易)</h3>
+          <h3>累積淨 R(近 30 天)</h3>
         </div>
-        <div class="chart-wrap" id="chartCumR"></div>
+        <div class="chart-wrap" id="chartCumRRecent"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>累積淨 R(全部歷史,最近 100 筆平倉)</h3>
+        </div>
+        <div class="chart-wrap" id="chartCumRAll"></div>
       </div>
     </div>
     <div class="table-card">
