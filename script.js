@@ -92,17 +92,27 @@ function drawLineChart(containerEl, series, opts = {}) {
     svg.appendChild(label);
   }
 
-  const firstLabel = document.createElementNS(svgNS, "text");
-  firstLabel.setAttribute("x", padL); firstLabel.setAttribute("y", height - 6);
-  firstLabel.setAttribute("font-size", "10.5"); firstLabel.setAttribute("fill", mutedColor);
-  firstLabel.textContent = opts.xFmt ? opts.xFmt(xMin) : xMin;
-  svg.appendChild(firstLabel);
-  const lastLabel = document.createElementNS(svgNS, "text");
-  lastLabel.setAttribute("x", width - padR); lastLabel.setAttribute("y", height - 6);
-  lastLabel.setAttribute("text-anchor", "end");
-  lastLabel.setAttribute("font-size", "10.5"); lastLabel.setAttribute("fill", mutedColor);
-  lastLabel.textContent = opts.xFmt ? opts.xFmt(xMax) : xMax;
-  svg.appendChild(lastLabel);
+  // X 軸時間刻度：原本只標最左最右兩個日期，中間要 hover 才看得到時間。
+  // 這裡依圖表寬度算出大概每 90px 放一個刻度，中間也標上日期。
+  const xTicks = Math.min(6, Math.max(2, Math.round(innerW / 90)));
+  for (let i = 0; i <= xTicks; i++) {
+    const tx = xMin + ((xMax - xMin) / xTicks) * i;
+    const px = xPix(tx);
+    const anchor = i === 0 ? "start" : i === xTicks ? "end" : "middle";
+
+    const tick = document.createElementNS(svgNS, "line");
+    tick.setAttribute("x1", px); tick.setAttribute("x2", px);
+    tick.setAttribute("y1", padT + innerH); tick.setAttribute("y2", padT + innerH + 4);
+    tick.setAttribute("stroke", mutedColor); tick.setAttribute("stroke-width", "1");
+    svg.appendChild(tick);
+
+    const label = document.createElementNS(svgNS, "text");
+    label.setAttribute("x", px); label.setAttribute("y", height - 6);
+    label.setAttribute("text-anchor", anchor);
+    label.setAttribute("font-size", "10.5"); label.setAttribute("fill", mutedColor);
+    label.textContent = opts.xFmt ? opts.xFmt(tx) : Math.round(tx);
+    svg.appendChild(label);
+  }
 
   series.forEach((s) => {
     if (s.points.length < 2) return;
