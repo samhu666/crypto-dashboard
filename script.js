@@ -364,7 +364,9 @@ function renderScanCharts(scan) {
     emptyText: "尚無已結束的交易",
   });
 
-  const closed = [...(scan?.closedRecent || [])].sort((a, b) => a.closedAtMs - b.closedAtMs);
+  // 累積淨R 用獨立保存的長期歷史（scannerHistory），不是只留最近 100 筆的 closedRecent，
+  // 不然交易頻繁時一天內就會把更早的紀錄洗掉，圖表永遠只剩今天。
+  const closed = [...(scan?.history || scan?.closedRecent || [])].sort((a, b) => a.closedAtMs - b.closedAtMs);
   let cum = 0;
   const points = closed.map((c) => { cum += c.netR; return { x: c.closedAtMs, y: cum }; });
   const recentPoints = filterRecent(points);
