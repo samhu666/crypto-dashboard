@@ -127,6 +127,51 @@
     </div>
   </section>
 
+  <section class="panel" id="scan2rSection">
+    <div class="panel-head">
+      <h2>高頻掃描器 1:2R <span class="tag tag-experimental">實驗性軌道</span></h2>
+      <p class="panel-desc">跟上方 1:1R 完全同一套幣種/訊號/進場邏輯,唯一差異是止盈拉遠到 2R 才出場(風險一樣是 1R)。獨立虛擬資金與統計,權益/淨R 不與上方 1:1R 合併計算。</p>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-card chart-card-full">
+        <div class="chart-card-head">
+          <h3>各訊號累積勝率(1:2R)</h3>
+        </div>
+        <div class="chart-wrap" id="chartWinRate2r"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>累積淨 R(1:2R,近 30 天)</h3>
+        </div>
+        <div class="chart-wrap" id="chartCumRRecent2r"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>累積淨 R(1:2R,全部歷史)</h3>
+        </div>
+        <div class="chart-wrap" id="chartCumRAll2r"></div>
+      </div>
+    </div>
+    <div class="table-card">
+      <h3>目前未平倉部位(1:2R)</h3>
+      <div class="table-scroll">
+        <table id="openTable2r">
+          <thead><tr><th>幣種</th><th>訊號</th><th>方向</th><th>進場</th><th>止損</th><th>止盈</th><th>已持有</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="table-card">
+      <h3>最近平倉紀錄(1:2R)</h3>
+      <div class="table-scroll">
+        <table id="closedTable2r">
+          <thead><tr><th>幣種</th><th>訊號</th><th>結果</th><th>進場→出場</th><th>淨結果</th><th>時間</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
 </main>
 
 <footer class="site-footer">

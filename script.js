@@ -356,7 +356,10 @@ function renderPaperTable(paper) {
   tbody.innerHTML = rows.length ? rows.join("") : `<tr class="empty-row"><td colspan="5">尚無資料</td></tr>`;
 }
 
-function renderScanCharts(scan) {
+// suffix="" 畫原本的 1:1R 區塊(chartWinRate/chartCumRRecent/...),suffix="2r" 畫獨立的
+// 1:2R 區塊(chartWinRate2r/chartCumRRecent2r/...)——兩邊各自的 scan 資料來源不同
+// (/api/scan vs /api/scan2r),累積淨R各自獨立計算,不會加總混在一起。
+function renderScanCharts(scan, suffix = "") {
   const statEntries = Object.entries(scan?.stats || {});
   const items = statEntries.map(([name, st]) => {
     const v = winRateVerdict(st);
@@ -368,14 +371,14 @@ function renderScanCharts(scan) {
       tooltip: `<div class="tt-row">${v.text},共 ${st.wins + st.losses} 筆已結束</div>`,
     };
   });
-  drawBarChart(document.getElementById("chartWinRate"), items, {
+  drawBarChart(document.getElementById(`chartWinRate${suffix}`), items, {
     max: 100,
     valueFmt: (i) => `${i.value.toFixed(0)}%`,
     emptyText: "尚無已結束的交易",
   });
 
-  // 累積淨R 用獨立保存的長期歷史（scannerHistory），不是只留最近 100 筆的 closedRecent，
-  // 不然交易頻繁時一天內就會把更早的紀錄洗掉，圖表永遠只剩今天。
+  // 累積淨R 用獨立保存的長期歷史（scannerHistory/scannerHistory2r），不是只留最近 100 筆的
+  // closedRecent，不然交易頻繁時一天內就會把更早的紀錄洗掉，圖表永遠只剩今天。
   const closed = [...(scan?.history || scan?.closedRecent || [])].sort((a, b) => a.closedAtMs - b.closedAtMs);
   let cum = 0;
   const points = closed.map((c) => { cum += c.netR; return { x: c.closedAtMs, y: cum }; });
@@ -383,19 +386,19 @@ function renderScanCharts(scan) {
   const color = cssVar("--series-1");
   const cumROpts = { height: 220, yFmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}R`, xFmt: (v) => fmtDate(v) };
   drawLineChart(
-    document.getElementById("chartCumRRecent"),
+    document.getElementById(`chartCumRRecent${suffix}`),
     recentPoints.length ? [{ name: "累積淨R", color, points: recentPoints }] : [],
     cumROpts
   );
   drawLineChart(
-    document.getElementById("chartCumRAll"),
+    document.getElementById(`chartCumRAll${suffix}`),
     points.length ? [{ name: "累積淨R", color, points }] : [],
     cumROpts
   );
 }
 
-function renderScanTables(scan) {
-  const openTbody = document.querySelector("#openTable tbody");
+function renderScanTables(scan, suffix = "") {
+  const openTbody = document.querySelector(`#openTable${suffix} tbody`);
   const openRows = (scan?.open || []).map((p) => {
     const heldH = Math.round((Date.now() - p.openedAtMs) / 3600000);
     return `<tr>
@@ -407,7 +410,7 @@ function renderScanTables(scan) {
   });
   openTbody.innerHTML = openRows.length ? openRows.join("") : `<tr class="empty-row"><td colspan="7">目前沒有未平倉部位</td></tr>`;
 
-  const closedTbody = document.querySelector("#closedTable tbody");
+  const closedTbody = document.querySelector(`#closedTable${suffix} tbody`);
   const outcomeMeta = {
     win: ["✅ 止盈", "pill-win"], loss: ["❌ 止損", "pill-loss"],
     timeout_win: ["⏱ 逾時(賺)", "pill-timeout"], timeout_loss: ["⏱ 逾時(虧)", "pill-timeout"],
@@ -430,12 +433,15 @@ function renderScanTables(scan) {
 
 function render(data) {
   if (!data) return;
-  const { prices, paper, scan } = data;
+  const { prices, paper, scan, scan2r } = data;
   renderTickers(prices, paper, scan);
   renderPaperCharts(paper);
   renderPaperTable(paper);
-  renderScanCharts(scan);
-  renderScanTables(scan);
+  renderScanCharts(scan, "");
+  renderScanTables(scan, "");
+  // 1:2R 是完全獨立的資料來源(/api/scan2r),各自的圖表/表格互不影響、不加總。
+  renderScanCharts(scan2r, "2r");
+  renderScanTables(scan2r, "2r");
   document.getElementById("updatedAt").textContent = `更新於 ${new Date().toLocaleString("zh-TW")}`;
 }
 
@@ -450,12 +456,13 @@ async function loadAll() {
   btn.disabled = true;
   btn.textContent = "載入中…";
   try {
-    const [prices, paper, scan] = await Promise.all([
+    const [prices, paper, scan, scan2r] = await Promise.all([
       fetchJSON("/api/prices").catch(() => null),
       fetchJSON("/api/paper").catch(() => null),
       fetchJSON("/api/scan").catch(() => null),
+      fetchJSON("/api/scan2r").catch(() => null),
     ]);
-    lastData = { prices, paper, scan };
+    lastData = { prices, paper, scan, scan2r };
     render(lastData);
   } catch (e) {
     document.getElementById("updatedAt").textContent = "載入失敗,請稍後重試";
