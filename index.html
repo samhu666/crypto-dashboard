@@ -172,6 +172,51 @@
     </div>
   </section>
 
+  <section class="panel" id="scanV2Section">
+    <div class="panel-head">
+      <h2>高頻掃描器 V2 <span class="tag tag-experimental">實驗性軌道</span></h2>
+      <p class="panel-desc">跟上方 1:1R 同一套幣種/進場邏輯,差異有兩點:(1) 砍掉 5 個 180 天全樣本統計顯著虧損的做多訊號;(2) 新增「同時最多開 15 組倉」的組合層級曝險上限。獨立虛擬資金與統計,權益/淨R 不與其他軌道合併計算。</p>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-card chart-card-full">
+        <div class="chart-card-head">
+          <h3>各訊號累積勝率(V2)</h3>
+        </div>
+        <div class="chart-wrap" id="chartWinRateV2"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>累積淨 R(V2,近 30 天)</h3>
+        </div>
+        <div class="chart-wrap" id="chartCumRRecentV2"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>累積淨 R(V2,全部歷史)</h3>
+        </div>
+        <div class="chart-wrap" id="chartCumRAllV2"></div>
+      </div>
+    </div>
+    <div class="table-card">
+      <h3>目前未平倉部位(V2)</h3>
+      <div class="table-scroll">
+        <table id="openTableV2">
+          <thead><tr><th>幣種</th><th>訊號</th><th>方向</th><th>進場</th><th>止損</th><th>止盈</th><th>已持有</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="table-card">
+      <h3>最近平倉紀錄(V2)</h3>
+      <div class="table-scroll">
+        <table id="closedTableV2">
+          <thead><tr><th>幣種</th><th>訊號</th><th>結果</th><th>進場→出場</th><th>淨結果</th><th>時間</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
 </main>
 
 <footer class="site-footer">
