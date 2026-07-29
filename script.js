@@ -433,7 +433,7 @@ function renderScanTables(scan, suffix = "") {
 
 function render(data) {
   if (!data) return;
-  const { prices, paper, scan, scan2r, scanv2 } = data;
+  const { prices, paper, scan, scan2r, scanv2, scanv3 } = data;
   renderTickers(prices, paper, scan);
   renderPaperCharts(paper);
   renderPaperTable(paper);
@@ -445,6 +445,9 @@ function render(data) {
   // V2(2026-07-26新增)同樣是完全獨立的資料來源(/api/scanv2),不與其他軌道加總。
   renderScanCharts(scanv2, "V2");
   renderScanTables(scanv2, "V2");
+  // V3(2026-07-29新增,同幣種連續止損冷卻觀測軌道)同樣是完全獨立的資料來源(/api/scanv3)。
+  renderScanCharts(scanv3, "V3");
+  renderScanTables(scanv3, "V3");
   document.getElementById("updatedAt").textContent = `更新於 ${new Date().toLocaleString("zh-TW")}`;
 }
 
@@ -459,14 +462,15 @@ async function loadAll() {
   btn.disabled = true;
   btn.textContent = "載入中…";
   try {
-    const [prices, paper, scan, scan2r, scanv2] = await Promise.all([
+    const [prices, paper, scan, scan2r, scanv2, scanv3] = await Promise.all([
       fetchJSON("/api/prices").catch(() => null),
       fetchJSON("/api/paper").catch(() => null),
       fetchJSON("/api/scan").catch(() => null),
       fetchJSON("/api/scan2r").catch(() => null),
       fetchJSON("/api/scanv2").catch(() => null),
+      fetchJSON("/api/scanv3").catch(() => null),
     ]);
-    lastData = { prices, paper, scan, scan2r, scanv2 };
+    lastData = { prices, paper, scan, scan2r, scanv2, scanv3 };
     render(lastData);
   } catch (e) {
     document.getElementById("updatedAt").textContent = "載入失敗,請稍後重試";
