@@ -431,9 +431,57 @@ function renderScanTables(scan, suffix = "") {
   closedTbody.innerHTML = closedRows.length ? closedRows.join("") : `<tr class="empty-row"><td colspan="6">尚無平倉紀錄</td></tr>`;
 }
 
+// 趨勢+波動目標新軌道(2026-08-04):結構跟掃描器不同(long-only連續倉位,不是R-based
+// 進出場),所以不能重用renderScanCharts/renderScanTables——equity history是
+// {t, coins:{BTC:equity,...}}的快照陣列,不是closedRecent交易清單。這裡畫「10幣種平均
+// 權益」單一曲線(不逐幣種上色,避免超出已用CVD驗證過的6色調色盤),逐幣種細節留給表格。
+function renderVtCharts(vt) {
+  const history = vt?.history || [];
+  const points = history
+    .map((h) => {
+      const vals = Object.values(h.coins || {});
+      if (!vals.length) return null;
+      return { x: h.t, y: vals.reduce((a, b) => a + b, 0) / vals.length };
+    })
+    .filter(Boolean);
+  const recentPoints = filterRecent(points);
+  const color = cssVar("--series-1");
+  const opts = { height: 220, yFmt: (v) => fmtUsd(v), xFmt: (v) => fmtDate(v) };
+  drawLineChart(
+    document.getElementById("chartVtRecent"),
+    recentPoints.length ? [{ name: "10幣種平均權益", color, points: recentPoints }] : [],
+    opts
+  );
+  drawLineChart(
+    document.getElementById("chartVtAll"),
+    points.length ? [{ name: "10幣種平均權益", color, points }] : [],
+    opts
+  );
+}
+
+function renderVtTable(vt) {
+  const tbody = document.querySelector("#vtTable tbody");
+  const coins = vt?.coins || {};
+  const rows = Object.entries(coins)
+    .filter(([, c]) => c.lastPrice != null)
+    .map(([coin, c]) => {
+      const eq = c.cash + c.qty * c.lastPrice;
+      const ret = (eq / 10000 - 1) * 100;
+      const w = eq > 0 ? Math.round(((c.qty * c.lastPrice) / eq) * 100) : 0;
+      return `<tr>
+        <td>${coin}</td>
+        <td>${fmtUsd(eq)}</td>
+        <td class="${ret >= 0 ? "tile-delta up" : "tile-delta down"}">${fmtPct(ret)}</td>
+        <td>${w}%</td>
+        <td>${c.trades}</td>
+      </tr>`;
+    });
+  tbody.innerHTML = rows.length ? rows.join("") : `<tr class="empty-row"><td colspan="5">尚無資料</td></tr>`;
+}
+
 function render(data) {
   if (!data) return;
-  const { prices, paper, scan, scan2r, scanv2, scanv3 } = data;
+  const { prices, paper, scan, scan2r, scanv2, scanv3, vt } = data;
   renderTickers(prices, paper, scan);
   renderPaperCharts(paper);
   renderPaperTable(paper);
@@ -448,6 +496,9 @@ function render(data) {
   // V3(2026-07-29新增,同幣種連續止損冷卻觀測軌道)同樣是完全獨立的資料來源(/api/scanv3)。
   renderScanCharts(scanv3, "V3");
   renderScanTables(scanv3, "V3");
+  // 趨勢+波動目標(2026-08-04新增)同樣是完全獨立的資料來源(/api/vt),結構不同用專屬render函式。
+  renderVtCharts(vt);
+  renderVtTable(vt);
   document.getElementById("updatedAt").textContent = `更新於 ${new Date().toLocaleString("zh-TW")}`;
 }
 
@@ -462,15 +513,16 @@ async function loadAll() {
   btn.disabled = true;
   btn.textContent = "載入中…";
   try {
-    const [prices, paper, scan, scan2r, scanv2, scanv3] = await Promise.all([
+    const [prices, paper, scan, scan2r, scanv2, scanv3, vt] = await Promise.all([
       fetchJSON("/api/prices").catch(() => null),
       fetchJSON("/api/paper").catch(() => null),
       fetchJSON("/api/scan").catch(() => null),
       fetchJSON("/api/scan2r").catch(() => null),
       fetchJSON("/api/scanv2").catch(() => null),
       fetchJSON("/api/scanv3").catch(() => null),
+      fetchJSON("/api/vt").catch(() => null),
     ]);
-    lastData = { prices, paper, scan, scan2r, scanv2, scanv3 };
+    lastData = { prices, paper, scan, scan2r, scanv2, scanv3, vt };
     render(lastData);
   } catch (e) {
     document.getElementById("updatedAt").textContent = "載入失敗,請稍後重試";

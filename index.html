@@ -217,6 +217,36 @@
     </div>
   </section>
 
+  <section class="panel" id="vtSection">
+    <div class="panel-head">
+      <h2>趨勢+波動目標(小時線) <span class="tag tag-experimental">實驗性新軌道</span></h2>
+      <p class="panel-desc">2026-08-04 上線,結構跟上面四條掃描器軌道完全不同——不是雙向 R-based 進出場,而是移植六策略模擬盤已驗證的「趨勢+波動率目標」方法論到小時線:10 幣種各自 long-only 連續倉位(0~100%),依 5 訊號多數決 × 波動率目標動態調整倉位大小,權重差達 20% 才調倉。沒有回撤熔斷機制(倉位本身會隨波動率自動縮小)。剛上線樣本量很小,以下數字僅供觀察。</p>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>10 幣種平均權益曲線(近 30 天)</h3>
+        </div>
+        <div class="chart-wrap" id="chartVtRecent"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>10 幣種平均權益曲線(全部歷史)</h3>
+        </div>
+        <div class="chart-wrap" id="chartVtAll"></div>
+      </div>
+    </div>
+    <div class="table-card">
+      <h3>各幣種目前狀態(相對 $10,000 起始本金)</h3>
+      <div class="table-scroll">
+        <table id="vtTable">
+          <thead><tr><th>幣種</th><th>目前權益</th><th>報酬率</th><th>倉位</th><th>已調倉</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
   <section class="panel" id="scanV3Section">
     <div class="panel-head">
       <h2>高頻掃描器 V3 <span class="tag tag-experimental">實驗性軌道</span></h2>
