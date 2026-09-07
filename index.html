@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>加密貨幣機器人儀表板</title>
-<meta name="description" content="BTC/ETH 模擬盤與高頻掃描器即時數據儀表板" />
+<meta name="description" content="BTC/ETH 模擬盤與趨勢+波動目標軌道即時數據儀表板" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -33,7 +33,7 @@
     <div class="tile skeleton" id="tileBtc"></div>
     <div class="tile skeleton" id="tileEth"></div>
     <div class="tile skeleton" id="tileDays"></div>
-    <div class="tile skeleton" id="tileOpen"></div>
+    <div class="tile skeleton" id="tileVt"></div>
   </section>
 
   <section class="panel" id="paperSection">
@@ -82,145 +82,10 @@
     </div>
   </section>
 
-  <section class="panel" id="scanSection">
-    <div class="panel-head">
-      <h2>高頻掃描器 <span class="tag tag-experimental">實驗性軌道</span></h2>
-      <p class="panel-desc">10 幣種 × 6 訊號,小時線,固定 1:1R。與上方模擬盤是分開的獨立系統,樣本量還小,以下勝率僅供觀察。</p>
-    </div>
-    <div class="chart-grid">
-      <div class="chart-card chart-card-full">
-        <div class="chart-card-head">
-          <h3>各訊號累積勝率</h3>
-        </div>
-        <div class="chart-wrap" id="chartWinRate"></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-head">
-          <h3>累積淨 R(近 30 天)</h3>
-        </div>
-        <div class="chart-wrap" id="chartCumRRecent"></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-head">
-          <h3>累積淨 R(全部歷史,近 400 天)</h3>
-        </div>
-        <div class="chart-wrap" id="chartCumRAll"></div>
-      </div>
-    </div>
-    <div class="table-card">
-      <h3>目前未平倉部位</h3>
-      <div class="table-scroll">
-        <table id="openTable">
-          <thead><tr><th>幣種</th><th>訊號</th><th>方向</th><th>進場</th><th>止損</th><th>止盈</th><th>已持有</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-    <div class="table-card">
-      <h3>最近平倉紀錄</h3>
-      <div class="table-scroll">
-        <table id="closedTable">
-          <thead><tr><th>幣種</th><th>訊號</th><th>結果</th><th>進場→出場</th><th>淨結果</th><th>時間</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <section class="panel" id="scan2rSection">
-    <div class="panel-head">
-      <h2>高頻掃描器 1:2R <span class="tag tag-experimental">實驗性軌道</span></h2>
-      <p class="panel-desc">跟上方 1:1R 完全同一套幣種/訊號/進場邏輯,唯一差異是止盈拉遠到 2R 才出場(風險一樣是 1R)。獨立虛擬資金與統計,權益/淨R 不與上方 1:1R 合併計算。</p>
-    </div>
-    <div class="chart-grid">
-      <div class="chart-card chart-card-full">
-        <div class="chart-card-head">
-          <h3>各訊號累積勝率(1:2R)</h3>
-        </div>
-        <div class="chart-wrap" id="chartWinRate2r"></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-head">
-          <h3>累積淨 R(1:2R,近 30 天)</h3>
-        </div>
-        <div class="chart-wrap" id="chartCumRRecent2r"></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-head">
-          <h3>累積淨 R(1:2R,全部歷史)</h3>
-        </div>
-        <div class="chart-wrap" id="chartCumRAll2r"></div>
-      </div>
-    </div>
-    <div class="table-card">
-      <h3>目前未平倉部位(1:2R)</h3>
-      <div class="table-scroll">
-        <table id="openTable2r">
-          <thead><tr><th>幣種</th><th>訊號</th><th>方向</th><th>進場</th><th>止損</th><th>止盈</th><th>已持有</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-    <div class="table-card">
-      <h3>最近平倉紀錄(1:2R)</h3>
-      <div class="table-scroll">
-        <table id="closedTable2r">
-          <thead><tr><th>幣種</th><th>訊號</th><th>結果</th><th>進場→出場</th><th>淨結果</th><th>時間</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <section class="panel" id="scanV2Section">
-    <div class="panel-head">
-      <h2>高頻掃描器 V2 <span class="tag tag-experimental">實驗性軌道</span></h2>
-      <p class="panel-desc">跟上方 1:1R 同一套幣種/進場邏輯,差異有兩點:(1) 砍掉 5 個 180 天全樣本統計顯著虧損的做多訊號;(2) 新增「同時最多開 15 組倉」的組合層級曝險上限。獨立虛擬資金與統計,權益/淨R 不與其他軌道合併計算。</p>
-    </div>
-    <div class="chart-grid">
-      <div class="chart-card chart-card-full">
-        <div class="chart-card-head">
-          <h3>各訊號累積勝率(V2)</h3>
-        </div>
-        <div class="chart-wrap" id="chartWinRateV2"></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-head">
-          <h3>累積淨 R(V2,近 30 天)</h3>
-        </div>
-        <div class="chart-wrap" id="chartCumRRecentV2"></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-head">
-          <h3>累積淨 R(V2,全部歷史)</h3>
-        </div>
-        <div class="chart-wrap" id="chartCumRAllV2"></div>
-      </div>
-    </div>
-    <div class="table-card">
-      <h3>目前未平倉部位(V2)</h3>
-      <div class="table-scroll">
-        <table id="openTableV2">
-          <thead><tr><th>幣種</th><th>訊號</th><th>方向</th><th>進場</th><th>止損</th><th>止盈</th><th>已持有</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-    <div class="table-card">
-      <h3>最近平倉紀錄(V2)</h3>
-      <div class="table-scroll">
-        <table id="closedTableV2">
-          <thead><tr><th>幣種</th><th>訊號</th><th>結果</th><th>進場→出場</th><th>淨結果</th><th>時間</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
   <section class="panel" id="vtSection">
     <div class="panel-head">
-      <h2>趨勢+波動目標(小時線) <span class="tag tag-experimental">實驗性新軌道</span></h2>
-      <p class="panel-desc">2026-08-04 上線,結構跟上面四條掃描器軌道完全不同——不是雙向 R-based 進出場,而是移植六策略模擬盤已驗證的「趨勢+波動率目標」方法論到小時線:10 幣種各自 long-only 連續倉位(0~100%),依 5 訊號多數決 × 波動率目標動態調整倉位大小,權重差達 20% 才調倉。沒有回撤熔斷機制(倉位本身會隨波動率自動縮小)。剛上線樣本量很小,以下數字僅供觀察。</p>
+      <h2>趨勢+波動目標(小時線) <span class="tag tag-stable">加密貨幣正式軌道</span></h2>
+      <p class="panel-desc">2026-08-04 上線,2026-09-07 起成為唯一運作中的加密貨幣軌道。移植六策略模擬盤已驗證的「趨勢+波動率目標」方法論到小時線:10 幣種各自 long-only 連續倉位(0~100%),依 5 訊號多數決 × 波動率目標動態調整倉位大小,權重差達 20% 才調倉。不是雙向 R-based 進出場,沒有回撤熔斷機制(倉位本身會隨波動率自動縮小)。強勢牛市會犧牲約一半漲幅換取大幅降低的回撤——是風險特性不同,不是「更會賺」。</p>
     </div>
     <div class="chart-grid">
       <div class="chart-card">
@@ -247,48 +112,10 @@
     </div>
   </section>
 
-  <section class="panel" id="scanV3Section">
+  <section class="panel" id="scannerRetiredSection">
     <div class="panel-head">
-      <h2>高頻掃描器 V3 <span class="tag tag-experimental">實驗性軌道</span></h2>
-      <p class="panel-desc">跟上方 1:1R 同一套幣種/訊號濾網/曝險上限(15組倉),唯一差異:同一幣種連續 2 次止損後,不分方向暫停該幣種開新倉 24 小時。用來應對「單一幣種在窄幅區間反覆兩邊巴」的虧損模式(1:1R/V2 的既有機制對此都沒有防護)。獨立虛擬資金與統計,權益/淨R 不與其他軌道合併計算。</p>
-    </div>
-    <div class="chart-grid">
-      <div class="chart-card chart-card-full">
-        <div class="chart-card-head">
-          <h3>各訊號累積勝率(V3)</h3>
-        </div>
-        <div class="chart-wrap" id="chartWinRateV3"></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-head">
-          <h3>累積淨 R(V3,近 30 天)</h3>
-        </div>
-        <div class="chart-wrap" id="chartCumRRecentV3"></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-head">
-          <h3>累積淨 R(V3,全部歷史)</h3>
-        </div>
-        <div class="chart-wrap" id="chartCumRAllV3"></div>
-      </div>
-    </div>
-    <div class="table-card">
-      <h3>目前未平倉部位(V3)</h3>
-      <div class="table-scroll">
-        <table id="openTableV3">
-          <thead><tr><th>幣種</th><th>訊號</th><th>方向</th><th>進場</th><th>止損</th><th>止盈</th><th>已持有</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-    <div class="table-card">
-      <h3>最近平倉紀錄(V3)</h3>
-      <div class="table-scroll">
-        <table id="closedTableV3">
-          <thead><tr><th>幣種</th><th>訊號</th><th>結果</th><th>進場→出場</th><th>淨結果</th><th>時間</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
+      <h2>高頻掃描器(R 制軌道) <span class="tag tag-experimental">已退場</span></h2>
+      <p class="panel-desc">1:1R / 1:2R / V2 / V3 四條 16 訊號 SMC 框架軌道已於 2026-09-07 全部退場,不再開新倉。理由:長期樣本外驗證(累積 10 次修法)證實在目前市況下 edge 為負,並多次觸發 20% 回撤熔斷——8/2~8/3 三條同時熔斷、停擺 32 天後於 9/4 重置,不到 2 天(9/5~9/6)又三條同時熔斷。歷史資料保留不刪,仍可直接查詢 <code>/api/scan</code>、<code>/api/scanv2</code>、<code>/api/scanv3</code>、<code>/api/scan2r</code>,永久定格在退場當下狀態。</p>
     </div>
   </section>
 
@@ -296,7 +123,7 @@
 
 <footer class="site-footer">
   <div class="container footer-inner">
-    <p>資料來源:Cloudflare Worker(crypto-price-bot),每日 09:00 台灣時間更新。模擬盤與掃描器皆為虛擬資金,不構成投資建議。</p>
+    <p>資料來源:Cloudflare Worker(crypto-price-bot),每日 09:00 台灣時間更新。模擬盤與各軌道皆為虛擬資金,不構成投資建議。</p>
   </div>
 </footer>
 

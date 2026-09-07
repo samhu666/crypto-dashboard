@@ -258,22 +258,10 @@ function showBarTooltip(containerEl, barEl, item, svgW, svgH) {
   tooltip.style.top = `${(by / svgH) * containerEl.clientWidth * (svgH / svgW)}px`;
 }
 
-// ── 勝率 95% 信賴區間判定(與 Worker 端 scanWinRateVerdict 邏輯一致)──
-function winRateVerdict(st) {
-  const n = st.wins + st.losses;
-  if (n < 10) return { text: `樣本太少(${n}筆)`, cls: "pill-noise", wr: n ? st.wins / n : null };
-  const wr = st.wins / n;
-  const se = Math.sqrt((wr * (1 - wr)) / n);
-  const lo = Math.max(0, wr - 1.96 * se), hi = Math.min(1, wr + 1.96 * se);
-  if (lo > 0.5) return { text: `優勢 ${(wr * 100).toFixed(0)}%`, cls: "pill-edge", wr };
-  if (hi < 0.5) return { text: `劣勢 ${(wr * 100).toFixed(0)}%`, cls: "pill-antiedge", wr };
-  return { text: `雜訊 ${(wr * 100).toFixed(0)}%`, cls: "pill-noise", wr };
-}
-
 // ── 渲染 ──
 let lastData = null;
 
-function renderTickers(prices, paper, scan) {
+function renderTickers(prices, paper, vt) {
   const priceMap = Object.fromEntries((prices?.prices || []).map((p) => [p.name, p]));
   const tileHtml = (label, valueHtml, deltaHtml) =>
     `<div class="tile-label">${label}</div><div class="tile-value">${valueHtml}</div>${deltaHtml || ""}`;
@@ -292,8 +280,15 @@ function renderTickers(prices, paper, scan) {
   document.getElementById("tileDays").className = "tile";
   document.getElementById("tileDays").innerHTML = tileHtml("模擬盤運行天數", paper?.state?.days ?? "—");
 
-  document.getElementById("tileOpen").className = "tile";
-  document.getElementById("tileOpen").innerHTML = tileHtml("掃描器未平倉部位", scan?.open?.length ?? 0);
+  const vtCoins = Object.values(vt?.coins || {}).filter((c) => c.lastPrice != null);
+  const vtAvgRet = vtCoins.length
+    ? vtCoins.reduce((a, c) => a + ((c.cash + c.qty * c.lastPrice) / 10000 - 1) * 100, 0) / vtCoins.length
+    : null;
+  document.getElementById("tileVt").className = "tile";
+  document.getElementById("tileVt").innerHTML = tileHtml(
+    "VT 軌道平均報酬",
+    vtAvgRet === null ? "—" : `<span class="${vtAvgRet >= 0 ? "tile-delta up" : "tile-delta down"}">${fmtPct(vtAvgRet)}</span>`
+  );
 }
 
 function renderPaperCharts(paper) {
@@ -356,81 +351,6 @@ function renderPaperTable(paper) {
   tbody.innerHTML = rows.length ? rows.join("") : `<tr class="empty-row"><td colspan="5">尚無資料</td></tr>`;
 }
 
-// suffix="" 畫原本的 1:1R 區塊(chartWinRate/chartCumRRecent/...),suffix="2r" 畫獨立的
-// 1:2R 區塊(chartWinRate2r/chartCumRRecent2r/...)——兩邊各自的 scan 資料來源不同
-// (/api/scan vs /api/scan2r),累積淨R各自獨立計算,不會加總混在一起。
-function renderScanCharts(scan, suffix = "") {
-  const statEntries = Object.entries(scan?.stats || {});
-  const items = statEntries.map(([name, st]) => {
-    const v = winRateVerdict(st);
-    const color = v.cls === "pill-edge" ? cssVar("--good") : v.cls === "pill-antiedge" ? cssVar("--critical") : cssVar("--ink-muted");
-    return {
-      label: name,
-      value: v.wr === null ? 0 : v.wr * 100,
-      color,
-      tooltip: `<div class="tt-row">${v.text},共 ${st.wins + st.losses} 筆已結束</div>`,
-    };
-  });
-  drawBarChart(document.getElementById(`chartWinRate${suffix}`), items, {
-    max: 100,
-    valueFmt: (i) => `${i.value.toFixed(0)}%`,
-    emptyText: "尚無已結束的交易",
-  });
-
-  // 累積淨R 用獨立保存的長期歷史（scannerHistory/scannerHistory2r），不是只留最近 100 筆的
-  // closedRecent，不然交易頻繁時一天內就會把更早的紀錄洗掉，圖表永遠只剩今天。
-  const closed = [...(scan?.history || scan?.closedRecent || [])].sort((a, b) => a.closedAtMs - b.closedAtMs);
-  let cum = 0;
-  const points = closed.map((c) => { cum += c.netR; return { x: c.closedAtMs, y: cum }; });
-  const recentPoints = filterRecent(points);
-  const color = cssVar("--series-1");
-  const cumROpts = { height: 220, yFmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}R`, xFmt: (v) => fmtDate(v) };
-  drawLineChart(
-    document.getElementById(`chartCumRRecent${suffix}`),
-    recentPoints.length ? [{ name: "累積淨R", color, points: recentPoints }] : [],
-    cumROpts
-  );
-  drawLineChart(
-    document.getElementById(`chartCumRAll${suffix}`),
-    points.length ? [{ name: "累積淨R", color, points }] : [],
-    cumROpts
-  );
-}
-
-function renderScanTables(scan, suffix = "") {
-  const openTbody = document.querySelector(`#openTable${suffix} tbody`);
-  const openRows = (scan?.open || []).map((p) => {
-    const heldH = Math.round((Date.now() - p.openedAtMs) / 3600000);
-    return `<tr>
-      <td>${p.coin}</td><td>${p.trigger}</td>
-      <td><span class="pill ${p.dir === 1 ? "pill-long" : "pill-short"}">${p.dir === 1 ? "多" : "空"}</span></td>
-      <td>${fmtPrice(p.entry)}</td><td>${fmtPrice(p.stop)}</td><td>${fmtPrice(p.target)}</td>
-      <td>${heldH} 小時</td>
-    </tr>`;
-  });
-  openTbody.innerHTML = openRows.length ? openRows.join("") : `<tr class="empty-row"><td colspan="7">目前沒有未平倉部位</td></tr>`;
-
-  const closedTbody = document.querySelector(`#closedTable${suffix} tbody`);
-  const outcomeMeta = {
-    win: ["✅ 止盈", "pill-win"], loss: ["❌ 止損", "pill-loss"],
-    timeout_win: ["⏱ 逾時(賺)", "pill-timeout"], timeout_loss: ["⏱ 逾時(虧)", "pill-timeout"],
-  };
-  const closedRows = [...(scan?.closedRecent || [])]
-    .sort((a, b) => b.closedAtMs - a.closedAtMs)
-    .slice(0, 30)
-    .map((c) => {
-      const [label, cls] = outcomeMeta[c.outcome] || [c.outcome, "pill-noise"];
-      return `<tr>
-        <td>${c.coin}</td><td>${c.trigger}</td>
-        <td><span class="pill ${cls}">${label}</span></td>
-        <td>${fmtPrice(c.entry)} → ${fmtPrice(c.exit)}</td>
-        <td class="${c.netR >= 0 ? "tile-delta up" : "tile-delta down"}">${c.netR >= 0 ? "+" : ""}${c.netR.toFixed(2)}R</td>
-        <td>${fmtDate(c.closedAtMs)}</td>
-      </tr>`;
-    });
-  closedTbody.innerHTML = closedRows.length ? closedRows.join("") : `<tr class="empty-row"><td colspan="6">尚無平倉紀錄</td></tr>`;
-}
-
 // 趨勢+波動目標新軌道(2026-08-04):結構跟掃描器不同(long-only連續倉位,不是R-based
 // 進出場),所以不能重用renderScanCharts/renderScanTables——equity history是
 // {t, coins:{BTC:equity,...}}的快照陣列,不是closedRecent交易清單。這裡畫「10幣種平均
@@ -481,22 +401,13 @@ function renderVtTable(vt) {
 
 function render(data) {
   if (!data) return;
-  const { prices, paper, scan, scan2r, scanv2, scanv3, vt } = data;
-  renderTickers(prices, paper, scan);
+  const { prices, paper, vt } = data;
+  renderTickers(prices, paper, vt);
   renderPaperCharts(paper);
   renderPaperTable(paper);
-  renderScanCharts(scan, "");
-  renderScanTables(scan, "");
-  // 1:2R 是完全獨立的資料來源(/api/scan2r),各自的圖表/表格互不影響、不加總。
-  renderScanCharts(scan2r, "2r");
-  renderScanTables(scan2r, "2r");
-  // V2(2026-07-26新增)同樣是完全獨立的資料來源(/api/scanv2),不與其他軌道加總。
-  renderScanCharts(scanv2, "V2");
-  renderScanTables(scanv2, "V2");
-  // V3(2026-07-29新增,同幣種連續止損冷卻觀測軌道)同樣是完全獨立的資料來源(/api/scanv3)。
-  renderScanCharts(scanv3, "V3");
-  renderScanTables(scanv3, "V3");
-  // 趨勢+波動目標(2026-08-04新增)同樣是完全獨立的資料來源(/api/vt),結構不同用專屬render函式。
+  // R 制掃描器四條軌道(1:1R/1:2R/V2/V3)已於 2026-09-07 退場,儀表板不再繪製,
+  // 歷史資料仍可直接查 /api/scan、/api/scanv2、/api/scanv3、/api/scan2r。
+  // 趨勢+波動目標(/api/vt)是目前唯一運作中的加密貨幣軌道。
   renderVtCharts(vt);
   renderVtTable(vt);
   document.getElementById("updatedAt").textContent = `更新於 ${new Date().toLocaleString("zh-TW")}`;
@@ -513,16 +424,12 @@ async function loadAll() {
   btn.disabled = true;
   btn.textContent = "載入中…";
   try {
-    const [prices, paper, scan, scan2r, scanv2, scanv3, vt] = await Promise.all([
+    const [prices, paper, vt] = await Promise.all([
       fetchJSON("/api/prices").catch(() => null),
       fetchJSON("/api/paper").catch(() => null),
-      fetchJSON("/api/scan").catch(() => null),
-      fetchJSON("/api/scan2r").catch(() => null),
-      fetchJSON("/api/scanv2").catch(() => null),
-      fetchJSON("/api/scanv3").catch(() => null),
       fetchJSON("/api/vt").catch(() => null),
     ]);
-    lastData = { prices, paper, scan, scan2r, scanv2, scanv3, vt };
+    lastData = { prices, paper, vt };
     render(lastData);
   } catch (e) {
     document.getElementById("updatedAt").textContent = "載入失敗,請稍後重試";
